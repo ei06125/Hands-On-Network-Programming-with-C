@@ -1,0 +1,82 @@
+#!/bin/sh
+
+# =============================================================================
+# Fun Fact: we can use the following shebang line for cross-compiling:
+# /* #!/bin/sh; C:/Program\ Files/path/to/Git/usr/bin/sh.exe */
+# according to https://www.youtube.com/watch?v=fMYv6-SZsSo
+# =============================================================================
+
+source $(pwd)/tools/scripts/utils/logger.sh
+
+log_info "Running pre-commit hook..."
+
+# =============================================================================
+# Assert that git user's email is valid (under the company's domain)
+# =============================================================================
+
+# change `domain` to use your company's domain
+domain="vrviu.com"
+usermail=$(git config user.email)
+if [[ "$usermail" != *"@$domain" ]]; then
+    log_fatal "Invalid username: $usermail! Please config git to use your company's email address."
+    exit 1
+fi
+
+# We could also check if the username is within a list of names
+
+# =============================================================================
+# REMOVE THIS WHEN BUILD IS FASTER
+# =============================================================================
+# log_warn "UPDATE pre-commit hook when build is faster"
+# exit 0
+
+# =============================================================================
+# Perform a clean build iff source files (*.c[pp]) have been modified
+# =============================================================================
+
+CMAKE_BUILD_TYPE=Release
+CMAKE_BINARY_DIR=build/CI/
+CMAKE_TEST_TARGET=unit_tests
+
+CMAKELIST_STAGED_FILES=`git status -s | awk '{print $2}' | grep CMakeLists.txt`
+log_debug $CMAKELIST_STAGED_FILES
+
+CPP_STAGED_FILES_EXTENSIONS=`git status -s | awk '{print $2}' | sed -e 's/.*\(\.[a-zA-Z0-9]*\)$/\1/' | uniq -c | grep -e c -e cpp -e h -w `
+log_debug $CPP_STAGED_FILES_EXTENSIONS
+
+CLEAN_BUILD=0
+
+if [[ $CLEAN_BUILD != 0 ]]; then
+    log_warn "Performing a clean build"
+    
+    log_info "Applying clang-format..."
+    find . -path "./lib/**.hpp" | xargs -I % clang-format -i %
+    find . -path "./lib/**.cpp" | xargs -I % clang-format -i %
+    find . -path "./src/**.hpp" | xargs -I % clang-format -i %
+    find . -path "./src/**.cpp" | xargs -I % clang-format -i %
+    find . -path "./tests/**.hpp" | xargs -I % clang-format -i %
+    find . -path "./tests/**.cpp" | xargs -I % clang-format -i %
+    find . -path "./CMakeLists.txt" | xargs -I % cmake-format -i % -c .cmake-format.yaml 2>/dev/null
+    find . -path "./src/**/CMakeLists.txt" | xargs -I % cmake-format -i % -c .cmake-format.yaml 2>/dev/null
+    find . -path "./lib/**/CMakeLists.txt" | xargs -I % cmake-format -i % -c .cmake-format.yaml 2>/dev/null
+    find . -path "./tests/**/CMakeLists.txt" | xargs -I % cmake-format -i % -c .cmake-format.yaml 2>/dev/null
+    log_info "Applying clang-format - DONE"
+    
+    log_info "Removing previous CI build ..."
+    rm -rf $CMAKE_BINARY_DIR
+    log_info "Removing previous CI build -- DONE"
+    
+fi # CLEAN BUILD
+
+log_trace "Building and Testing..."
+log_info "Generating build system..." && cmake -S . -B $CMAKE_BINARY_DIR -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE && log_info "Building..." && cmake --build $CMAKE_BINARY_DIR --config $CMAKE_BUILD_TYPE --target $CMAKE_TEST_TARGET && log_info "Testing..." &&
+ctest --test-dir $CMAKE_BINARY_DIR/tests -C $CMAKE_BUILD_TYPE
+
+if [[ "$?" != 0 ]]; then
+    log_error "Building or Testing - FAILED"
+    exit 1
+else
+    log_trace "Building and Testing - DONE"
+    log_info "Building and Testing succeeded!"
+    exit 0
+fi
