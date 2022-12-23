@@ -10,12 +10,13 @@ set(ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
 # set(CMAKE_CURRENT_LOG_LEVEL 2)
 include(${ROOT_DIR}/tools/cmake/Modules/BuildToolsMain.cmake)
 
+cmake_host_system_information(RESULT OS_NAME_RESULT QUERY OS_NAME)
+cmake_host_system_information(RESULT OS_PLATFORM_RESULT QUERY OS_PLATFORM)
+log_info("OS_NAME_RESULT: ${OS_NAME_RESULT}")
+log_info("OS_PLATFORM_RESULT: ${OS_PLATFORM_RESULT}")
+
 # Surpress CTest Targets (Continuous, Experimental, Nightly)
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
-
-if(NOT WIN32)
-  message(FATAL_ERROR "This project only runs on Windows")
-endif()
 
 # Surpresses MSVC Target ZERO_CHECK
 set(CMAKE_SUPPRESS_REGENERATION ON)
@@ -25,11 +26,11 @@ set(CMAKE_DEBUG_POSTFIX d)
 set(CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(MSVC)
+if(OS_NAME STREQUAL "Windows")
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ROOT_DIR}/out/Windows)
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${ROOT_DIR}/out/Windows)
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT_DIR}/out/Windows)
-else()
+elseif(OS_NAME STREQUAL "Linux")
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
       ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/bin
   )
@@ -38,6 +39,16 @@ else()
   )
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
       ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/lib
+  )
+else()
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
+      ${ROOT_DIR}/out/MacOS/${CMAKE_BUILD_TYPE}/bin
+  )
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
+      ${ROOT_DIR}/out/MacOS/${CMAKE_BUILD_TYPE}/lib
+  )
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
+      ${ROOT_DIR}/out/MacOS/${CMAKE_BUILD_TYPE}/lib
   )
 endif()
 
@@ -71,50 +82,28 @@ add_subdirectory(examples)
 # ----------------------------------------------------------------------------
 # divert option/features/definitions propagation library
 # ----------------------------------------------------------------------------
-# log_info("Configuring global_options")
-# add_library(global_options INTERFACE)
-# target_compile_features(global_options INTERFACE cxx_std_20)
-# if(MSVC)
-#   target_compile_definitions(
-#     global_options INTERFACE NOMINMAX WIN32_LEAN_AND_MEAN
-#   )
-# endif()
-# target_precompile_headers(
-#   global_options
-#   INTERFACE
-#   # C Standard Library
-#   <cstdint>
-#   <cstdlib>
-#   # C++ Standard Library
-#   <algorithm>
-#   <exception>
-#   <filesystem>
-#   <iostream>
-#   <string>
-#   <string_view>
-#   <vector>
-# )
+# log_info("Configuring global_options") add_library(global_options INTERFACE)
+# target_compile_features(global_options INTERFACE cxx_std_20) if(MSVC)
+# target_compile_definitions( global_options INTERFACE NOMINMAX
+# WIN32_LEAN_AND_MEAN ) endif() target_precompile_headers( global_options
+# INTERFACE # C Standard Library <cstdint> <cstdlib> # C++ Standard Library
+# <algorithm> <exception> <filesystem> <iostream> <string> <string_view>
+# <vector> )
 
-# # https://gitlab.kitware.com/cmake/community/-/wikis/doc/tutorials/How-To-Write-Platform-Checks
-# if(MSVC)
-#   target_precompile_headers(
-#     global_options INTERFACE
-#     # Windows Library
-#     <Windows.h> <timeapi.h>
-#   )
-# endif()
+# #
+# https://gitlab.kitware.com/cmake/community/-/wikis/doc/tutorials/How-To-Write-Platform-Checks
+# if(MSVC) target_precompile_headers( global_options INTERFACE # Windows Library
+# <Windows.h> <timeapi.h> ) endif()
 
 # uncomment this when ready to work on warnings
 
 # set_project_warnings(global_options)
-
 
 # ----------------------------------------------------------------------------
 # Libs
 # ----------------------------------------------------------------------------
 
 # add_subdirectory(lib)
-
 
 # ----------------------------------------------------------------------------
 # Apps
