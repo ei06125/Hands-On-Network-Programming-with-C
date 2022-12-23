@@ -1,0 +1,5 @@
+if (MSVC)
+add_executable(win_init win_init.c)
+add_executable(win_list win_list.c)
+else()
+endif()
