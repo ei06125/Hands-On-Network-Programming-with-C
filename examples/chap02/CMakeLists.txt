@@ -1,0 +1,6 @@
+file(GLOB_RECURSE files_RESULT "*.c")
+message("Files: ${files_RESULT}")
+foreach(file ${files_RESULT})
+  get_filename_component(filename ${file} NAME_WE [CACHE])
+  add_executable(${filename} ${filename}.c)
+endforeach()
