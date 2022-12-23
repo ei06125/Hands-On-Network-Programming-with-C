@@ -64,62 +64,69 @@ FetchContent_MakeAvailable(spdlog)
 # ============================================================================
 
 # ----------------------------------------------------------------------------
+# Examples
+# ----------------------------------------------------------------------------
+add_subdirectory(examples)
+
+# ----------------------------------------------------------------------------
 # divert option/features/definitions propagation library
 # ----------------------------------------------------------------------------
-log_info("Configuring global_options")
-add_library(global_options INTERFACE)
-target_compile_features(global_options INTERFACE cxx_std_20)
-if(MSVC)
-  target_compile_definitions(
-    global_options INTERFACE NOMINMAX WIN32_LEAN_AND_MEAN
-  )
-endif()
-target_precompile_headers(
-  global_options
-  INTERFACE
-  # C Standard Library
-  <cstdint>
-  <cstdlib>
-  # C++ Standard Library
-  <algorithm>
-  <exception>
-  <filesystem>
-  <iostream>
-  <string>
-  <string_view>
-  <vector>
-)
+# log_info("Configuring global_options")
+# add_library(global_options INTERFACE)
+# target_compile_features(global_options INTERFACE cxx_std_20)
+# if(MSVC)
+#   target_compile_definitions(
+#     global_options INTERFACE NOMINMAX WIN32_LEAN_AND_MEAN
+#   )
+# endif()
+# target_precompile_headers(
+#   global_options
+#   INTERFACE
+#   # C Standard Library
+#   <cstdint>
+#   <cstdlib>
+#   # C++ Standard Library
+#   <algorithm>
+#   <exception>
+#   <filesystem>
+#   <iostream>
+#   <string>
+#   <string_view>
+#   <vector>
+# )
 
-# https://gitlab.kitware.com/cmake/community/-/wikis/doc/tutorials/How-To-Write-Platform-Checks
-if(MSVC)
-  target_precompile_headers(
-    global_options INTERFACE
-    # Windows Library
-    <Windows.h> <timeapi.h>
-  )
-endif()
+# # https://gitlab.kitware.com/cmake/community/-/wikis/doc/tutorials/How-To-Write-Platform-Checks
+# if(MSVC)
+#   target_precompile_headers(
+#     global_options INTERFACE
+#     # Windows Library
+#     <Windows.h> <timeapi.h>
+#   )
+# endif()
 
 # uncomment this when ready to work on warnings
 
 # set_project_warnings(global_options)
 
-# ============================================================================
+
+# ----------------------------------------------------------------------------
 # Libs
-# ============================================================================
+# ----------------------------------------------------------------------------
 
-add_subdirectory(lib)
+# add_subdirectory(lib)
 
-# ============================================================================
+
+# ----------------------------------------------------------------------------
 # Apps
-# ============================================================================
+# ----------------------------------------------------------------------------
 
-add_subdirectory(src)
+# add_subdirectory(src)
 
 # ============================================================================
 # Tests
 # ============================================================================
 
-add_subdirectory(tests)
+# add_subdirectory(tests)
 
 # ============================================================================
 # Install: TODO
