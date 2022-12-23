@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-TEST(GTestUnitTestSuite, AssertRuns) {
+TEST(GTestUnitTestSuite, GTestRuns) {
   ASSERT_TRUE(true);
 }
 

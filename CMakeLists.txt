@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.21)
 project(
   NetSolutions
   VERSION 0.0.1
-  LANGUAGES CXX)
+  LANGUAGES CXX
+)
 
 set(ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
 # set(CMAKE_CURRENT_LOG_LEVEL 2)
@@ -30,11 +31,14 @@ if(MSVC)
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT_DIR}/out/Windows)
 else()
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
-      ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/bin)
+      ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/bin
+  )
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
-      ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/lib)
+      ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/lib
+  )
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
-      ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/lib)
+      ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/lib
+  )
 endif()
 
 # ============================================================================
@@ -66,8 +70,9 @@ log_info("Configuring global_options")
 add_library(global_options INTERFACE)
 target_compile_features(global_options INTERFACE cxx_std_20)
 if(MSVC)
-  target_compile_definitions(global_options INTERFACE NOMINMAX
-                                                      WIN32_LEAN_AND_MEAN)
+  target_compile_definitions(
+    global_options INTERFACE NOMINMAX WIN32_LEAN_AND_MEAN
+  )
 endif()
 target_precompile_headers(
   global_options
@@ -82,12 +87,16 @@ target_precompile_headers(
   <iostream>
   <string>
   <string_view>
-  <vector>)
+  <vector>
+)
+
+# https://gitlab.kitware.com/cmake/community/-/wikis/doc/tutorials/How-To-Write-Platform-Checks
 if(MSVC)
   target_precompile_headers(
     global_options INTERFACE
     # Windows Library
-    <Windows.h> <timeapi.h>)
+    <Windows.h> <timeapi.h>
+  )
 endif()
 
 # uncomment this when ready to work on warnings
