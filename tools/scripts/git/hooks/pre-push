@@ -24,6 +24,11 @@ fi
 
 # We could also check if the username is within a list of names
 
+# =============================================================================
+# REMOVE THIS WHEN BUILD IS FASTER
+# =============================================================================
+log_warn "UPDATE pre-commit hook when build is faster"
+exit 0
 
 # =============================================================================
 # Perform a clean build iff source files (*.c[pp]) have been modified
