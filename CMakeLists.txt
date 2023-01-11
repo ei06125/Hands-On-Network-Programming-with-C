@@ -1,122 +1,222 @@
-cmake_minimum_required(VERSION 3.21)
+# ##############################################################################
+# Copyright (C) Studio Katakana. All Rights Reserved.
+# ##############################################################################
+
+# ##############################################################################
+# Configuring
+# ##############################################################################
+
+# ==============================================================================
+# CMake General Settings
+# ==============================================================================
+
+cmake_minimum_required(VERSION 3.16)
 
 project(
-  NetSolutions
+  NetworkingTS
   VERSION 0.0.1
   LANGUAGES CXX
 )
 
-set(ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
-# set(CMAKE_CURRENT_LOG_LEVEL 2)
-include(${ROOT_DIR}/tools/cmake/Modules/BuildToolsMain.cmake)
+# ------------------------------------------------------------------------------
+# CMake Include Modules
+# ------------------------------------------------------------------------------
 
-cmake_host_system_information(RESULT OS_NAME_RESULT QUERY OS_NAME)
-cmake_host_system_information(RESULT OS_PLATFORM_RESULT QUERY OS_PLATFORM)
-log_info("OS_NAME_RESULT: ${OS_NAME_RESULT}")
-log_info("OS_PLATFORM_RESULT: ${OS_PLATFORM_RESULT}")
+include(FetchContent)
+
+# ------------------------------------------------------------------------------
+# CMake Cache Variables & Options
+# ------------------------------------------------------------------------------
+
+# short alias for top-level root folder
+set(ROOT_DIR ${CMAKE_CURRENT_LIST_DIR})
+
+# VRVIU is not using the latest standard
+set(CMAKE_CXX_STANDARD 20)
+
+# prevent std=gnu++20 or similar
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Surpress CTest Targets (Continuous, Experimental, Nightly)
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 
 # Surpresses MSVC Target ZERO_CHECK
 set(CMAKE_SUPPRESS_REGENERATION ON)
-set(INSTALL_GTEST OFF)
+
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(CMAKE_DEBUG_POSTFIX d)
-set(CXX_STANDARD 20)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
-if(OS_NAME STREQUAL "Windows")
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${ROOT_DIR}/out/Windows)
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${ROOT_DIR}/out/Windows)
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${ROOT_DIR}/out/Windows)
-elseif(OS_NAME STREQUAL "Linux")
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
-      ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/bin
-  )
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
-      ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/lib
-  )
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
-      ${ROOT_DIR}/out/Linux/${CMAKE_BUILD_TYPE}/lib
-  )
-else()
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
-      ${ROOT_DIR}/out/MacOS/${CMAKE_BUILD_TYPE}/bin
-  )
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
-      ${ROOT_DIR}/out/MacOS/${CMAKE_BUILD_TYPE}/lib
-  )
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY
-      ${ROOT_DIR}/out/MacOS/${CMAKE_BUILD_TYPE}/lib
+# Check to see if this project is the root/top-level project
+if(CMAKE_VERSION VERSION_LESS 3.21)
+  # This variable is set by project() in CMake 3.21+
+  string(COMPARE EQUAL "${CMAKE_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}"
+                 PROJECT_IS_TOP_LEVEL
   )
 endif()
 
-# ============================================================================
+# ==============================================================================
+# CMake Dependencies
+# ==============================================================================
+
+message("[INFO] Configuring CMake Dependencies")
+
+# ------------------------------------------------------------------------------
+# ei06125_cmake_modules
+# ------------------------------------------------------------------------------
+
+message("[INFO] Downloading ei06125_cmake_modules")
+
+if(MSVC)
+  set(EI06125_CMAKE_MODULES_GIT_REPOSITORY
+      https://github.com/ei06125/ei06125_cmake_modules.git
+  )
+else()
+  set(EI06125_CMAKE_MODULES_GIT_REPOSITORY
+      git@github.com:ei06125/ei06125_cmake_modules.git
+  )
+endif()
+
+FetchContent_Declare(
+  ei06125_cmake_modules
+  GIT_REPOSITORY ${EI06125_CMAKE_MODULES_GIT_REPOSITORY}
+  GIT_TAG 573fb011e552d4e5245a8764d34396a89f8ba2f1 # v0.0.1
+)
+
+message("[INFO] Making ei06125_cmake_modules available")
+FetchContent_MakeAvailable(ei06125_cmake_modules)
+log_info("Downloading ei06125_cmake_modules -- done")
+log_info("Configuring CMake Dependencies -- done")
+
+# ##############################################################################
+# Building
+# ##############################################################################
+
+# ==============================================================================
+# Utilities
+# ==============================================================================
+
+find_program(CLANGTIDY clang-tidy)
+if(CLANGTIDY)
+  set(NET_CXX_CLANG_TIDY ${CLANGTIDY} -extra-arg=-Wno-unknown-warning-option)
+else()
+  log_error("clang-tidy requested but executable not found")
+endif()
+
+# ==============================================================================
 # Dependencies
-# ============================================================================
+# ==============================================================================
 
-include(FetchContent)
-
-# ----------------------------------------------------------------------------
-# spdlog
-# ----------------------------------------------------------------------------
-
-log_info("Configuring dependencies: spdlog")
+log_info("Fetching spdlog...")
 FetchContent_Declare(
   spdlog
   GIT_REPOSITORY https://github.com/gabime/spdlog.git
   GIT_TAG ad0e89cbfb4d0c1ce4d097e134eb7be67baebb36 # release-1.11.0
 )
+log_info("Fetching spdlog -- done")
+log_info("Making spdlog available...")
 FetchContent_MakeAvailable(spdlog)
+log_info("Making spdlog available -- done")
 
-# ============================================================================
-# Build
-# ============================================================================
+# ==============================================================================
+# Hands-On Networking Programming With C examples
+# ==============================================================================
 
-# ----------------------------------------------------------------------------
-# Examples
-# ----------------------------------------------------------------------------
 add_subdirectory(examples)
 
-# ----------------------------------------------------------------------------
-# divert option/features/definitions propagation library
-# ----------------------------------------------------------------------------
-# log_info("Configuring global_options") add_library(global_options INTERFACE)
-# target_compile_features(global_options INTERFACE cxx_std_20) if(MSVC)
-# target_compile_definitions( global_options INTERFACE NOMINMAX
-# WIN32_LEAN_AND_MEAN ) endif() target_precompile_headers( global_options
-# INTERFACE # C Standard Library <cstdint> <cstdlib> # C++ Standard Library
-# <algorithm> <exception> <filesystem> <iostream> <string> <string_view>
-# <vector> )
+# ==============================================================================
+# global settings that propagate options/definitions/features to linking targets
+# ==============================================================================
 
-# #
-# https://gitlab.kitware.com/cmake/community/-/wikis/doc/tutorials/How-To-Write-Platform-Checks
-# if(MSVC) target_precompile_headers( global_options INTERFACE # Windows Library
-# <Windows.h> <timeapi.h> ) endif()
+add_library(net_global_settings INTERFACE)
+set_project_warnings(net_global_settings)
+if(OS_NAME_RESULT STREQUAL "Windows")
+  target_compile_definitions(
+    net_global_settings INTERFACE WIN32_LEAN_AND_MEAN NOMINMAX
+  )
+endif()
 
-# uncomment this when ready to work on warnings
+set(c_standard_library_pch <cassert>)
+set(cpp_standard_library_pch
+    <deque>
+    <list>
+    <memory>
+    <queue>
+    <stdexcept>
+    <string>
+    <unordered_map>
+    <unordered_set>
+    <vector>
+)
+set(windows_api_library_pch <Windows.h> <WinSock2.h> <Ws2tcpip.h> <iphlpapi.h>)
+set(linux_api_library_pch
+    <sys/socket.h>
+    <ifaddrs.h>
+    <netinet/in.h>
+    <sys/types.h>
+    <netdb.h>
+    <errno.h>
+    <fcntl.h>
+    <unistd.h>
+)
 
-# set_project_warnings(global_options)
+# ==============================================================================
+# net: Networking TS main library
+# ==============================================================================
 
-# ----------------------------------------------------------------------------
-# Libs
-# ----------------------------------------------------------------------------
+add_subdirectory(lib)
 
-# add_subdirectory(lib)
+# ==============================================================================
+# Hands-On Networking Programming With C++ examples
+# ==============================================================================
 
-# ----------------------------------------------------------------------------
-# Apps
-# ----------------------------------------------------------------------------
+add_subdirectory(src)
 
-# add_subdirectory(src)
+# ##############################################################################
+# Testing
+# ##############################################################################
 
-# ============================================================================
-# Tests
-# ============================================================================
+option(NET_BUILD_TESTS "Build test targets" ${PROJECT_IS_TOP_LEVEL})
+if(NET_BUILD_TESTS)
 
-# add_subdirectory(tests)
+  # ----------------------------------------------------------------------------
+  # Test Dependencies
+  # ----------------------------------------------------------------------------
+  enable_testing()
+  include(CTest)
+  log_info("Configuring Google Test")
+  find_package(Threads REQUIRED)
+  find_package(GTest)
+  if(NOT GTest_FOUND)
+    log_warn("Configuring Google Test -- NOT FOUND")
+    log_info("Downloading into ${CMAKE_BINARY_DIR}/_deps")
+    log_info("You might want to try installing on your system")
+    FetchContent_Declare(
+      googletest
+      GIT_REPOSITORY https://github.com/google/googletest.git
+      GIT_TAG 58d77fa8070e8cec2dc1ed015d66b454c8d78850 # release-1.12.1
+    )
+    FetchContent_MakeAvailable(googletest)
+    add_library(EI06125::GTest ALIAS gtest)
+    add_library(EI06125::GMock ALIAS gmock)
+  else()
+    add_library(EI06125::GTest ALIAS GTest::gtest)
+    add_library(EI06125::GMock ALIAS GTest::gmock)
+  endif(NOT GTest_FOUND)
+  include(GoogleTest)
+  log_info("Configuring Google Test -- done")
 
-# ============================================================================
-# Install: TODO
-# ============================================================================
+  # ----------------------------------------------------------------------------
+  # Test Targets
+  # ----------------------------------------------------------------------------
+
+  add_subdirectory(tests)
+
+endif(NET_BUILD_TESTS)
+
+# ##############################################################################
+# Installing
+# ##############################################################################
+
+# ##############################################################################
+# Packaging
+# ##############################################################################

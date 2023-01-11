@@ -1,16 +1,11 @@
-log_info("Configuring unit_tests")
-add_executable(unit_tests)
-file(GLOB_RECURSE unit_tests_SOURCE_FILES "*.cpp")
-target_sources(unit_tests PRIVATE ${unit_tests_SOURCE_FILES})
-target_link_libraries(unit_tests PRIVATE global_options gtest gmock)
-target_include_directories(unit_tests PRIVATE ${ROOT_DIR}/include)
+log_info("Configuring net_unit_tests")
 
-gtest_discover_tests(
-  unit_tests
-  # [EXTRA_ARGS arg1...]
-  [WORKING_DIRECTORY
-  $<TARGET_FILE_DIR:unit_tests>]
-  # [TEST_PREFIX prefix  ] [TEST_SUFFIX suffix] [NO_PRETTY_TYPES]
-  # [NO_PRETTY_VALUES] [PROPERTIES name1 value1...] [TEST_LIST var]
-  # [DISCOVERY_TIMEOUT seconds]
-)
+add_executable(net_unit_tests)
+file(GLOB_RECURSE unit_tests_SOURCE_FILES "*.cpp")
+target_sources(net_unit_tests PRIVATE ${unit_tests_SOURCE_FILES})
+target_link_libraries(net_unit_tests PRIVATE net gtest gmock)
+target_include_directories(net_unit_tests PRIVATE ${ROOT_DIR}/include)
+
+gtest_discover_tests(net_unit_tests)
+
+log_info("Configuring net_unit_tests -- DONE")

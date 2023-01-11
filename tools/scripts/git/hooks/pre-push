@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # =============================================================================
 # Fun Fact: we can use the following shebang line for cross-compiling:
@@ -6,7 +6,11 @@
 # according to https://www.youtube.com/watch?v=fMYv6-SZsSo
 # =============================================================================
 
+git_dir=$(git rev-parse --show-toplevel)
+cd $git_dir 1>pre-push.log
 source $(pwd)/tools/scripts/utils/logger.sh
+cd - 1> pre-push.log
+rm pre-push.log
 
 log_info "Running pre-push hook..."
 
@@ -15,20 +19,14 @@ log_info "Running pre-push hook..."
 # =============================================================================
 
 # change `domain` to use your company's domain
-domain="vrviu.com"
-usermail=$(git config user.email)
-if [[ "$usermail" != *"@$domain" ]]; then
-    log_fatal "Invalid username: $usermail! Please config git to use your company's email address."
-    exit 1
-fi
+# domain="vrviu.com"
+# usermail=$(git config user.email)
+# if [[ "$usermail" != *"@$domain" ]]; then
+#     log_fatal "Invalid username: $usermail! Please config git to use your company's email address."
+#     exit 1
+# fi
 
 # We could also check if the username is within a list of names
-
-# =============================================================================
-# REMOVE THIS WHEN BUILD IS FASTER
-# =============================================================================
-log_warn "UPDATE pre-commit hook when build is faster"
-exit 0
 
 # =============================================================================
 # Perform a clean build iff source files (*.c[pp]) have been modified
@@ -36,37 +34,76 @@ exit 0
 
 CMAKE_BUILD_TYPE=Release
 CMAKE_BINARY_DIR=build/CI/
-CMAKE_TEST_TARGET=unit_tests
+CMAKE_TEST_TARGET=net_unit_tests
 
-log_warn "Performing a clean build"
+# =============================================================================
+# Format all (modified) source, header and cmake files
+# =============================================================================
 
-log_info "Applying clang-format..."
+log_info "Formatting modified files..."
+# clang-format
+find . -path "./include/**.h" | xargs -I % clang-format -i %
+find . -path "./include/**.hpp" | xargs -I % clang-format -i %
+find . -path "./lib/**.h" | xargs -I % clang-format -i %
 find . -path "./lib/**.hpp" | xargs -I % clang-format -i %
 find . -path "./lib/**.cpp" | xargs -I % clang-format -i %
+find . -path "./src/**.h" | xargs -I % clang-format -i %
 find . -path "./src/**.hpp" | xargs -I % clang-format -i %
 find . -path "./src/**.cpp" | xargs -I % clang-format -i %
+find . -path "./tests/**.h" | xargs -I % clang-format -i %
 find . -path "./tests/**.hpp" | xargs -I % clang-format -i %
 find . -path "./tests/**.cpp" | xargs -I % clang-format -i %
+# cmake-format
 find . -path "./CMakeLists.txt" | xargs -I % cmake-format -i % -c .cmake-format.yaml 2>/dev/null
+find . -path "./**/*.cmake" | xargs -I % cmake-format -i % -c .cmake-format.yaml 2>/dev/null
 find . -path "./src/**/CMakeLists.txt" | xargs -I % cmake-format -i % -c .cmake-format.yaml 2>/dev/null
 find . -path "./lib/**/CMakeLists.txt" | xargs -I % cmake-format -i % -c .cmake-format.yaml 2>/dev/null
 find . -path "./tests/**/CMakeLists.txt" | xargs -I % cmake-format -i % -c .cmake-format.yaml 2>/dev/null
-log_info "Applying clang-format - DONE"
+log_info "Formatting modified files -- DONE"
 
+log_warn "Performing a clean build"
 log_info "Removing previous CI build ..."
 rm -rf $CMAKE_BINARY_DIR
 log_info "Removing previous CI build -- DONE"
 
+# =============================================================================
+# CMake configure, build and test stages
+# =============================================================================
 
-log_trace "Building and Testing..."
-log_info "Generating build system..." && cmake -S . -B $CMAKE_BINARY_DIR -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE && log_info "Building..." && cmake --build $CMAKE_BINARY_DIR --config $CMAKE_BUILD_TYPE --target $CMAKE_TEST_TARGET && log_info "Testing..." &&
-    ctest --test-dir $CMAKE_BINARY_DIR/tests -C $CMAKE_BUILD_TYPE
+# -----------------------------------------------------------------------------
+# Generating
+# -----------------------------------------------------------------------------
+log_info "Generating build system..."
+cmake -S . -B $CMAKE_BINARY_DIR -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE
 
 if [[ "$?" != 0 ]]; then
-    log_error "Building or Testing - FAILED" 
+    log_error "Generating - FAILED"
     exit 1
 else
-    log_trace "Building and Testing - DONE"
-    log_info "Building and Testing succeeded!"
-    exit 0
+    log_info "Generating build system -- done"
+fi
+
+# -----------------------------------------------------------------------------
+# Building
+# -----------------------------------------------------------------------------
+log_info "Building..."
+cmake --build $CMAKE_BINARY_DIR --config $CMAKE_BUILD_TYPE --target $CMAKE_TEST_TARGET
+
+if [[ "$?" != 0 ]]; then
+    log_error "Building - FAILED"
+    exit 1
+else
+    log_info "Building -- done"
+fi
+
+# -----------------------------------------------------------------------------
+# Testing
+# -----------------------------------------------------------------------------
+log_info "Testing..."
+ctest --test-dir $CMAKE_BINARY_DIR -C $CMAKE_BUILD_TYPE --output-on-failure
+if [[ "$?" != 0 ]]; then
+    log_error "Testing - FAILED"
+    exit 1
+else
+    log_info "Testing - DONE"
 fi
