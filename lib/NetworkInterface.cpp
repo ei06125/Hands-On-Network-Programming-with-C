@@ -17,6 +17,7 @@ namespace ei06125::net {
       }
       return true; // or false, as the actual value does not matter.
     }(); // Note the '()' after the lambda expression. This invokes the lambda.
+    (void)init;
 
     return instance;
   }

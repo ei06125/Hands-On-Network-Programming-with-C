@@ -1,5 +1,9 @@
 #include "networkingTS/DefaultNetworkManager.h"
 
-NetworkManager::NetworkManager() = default;
+namespace ei06125::net {
 
-NetworkManager::~NetworkManager() = default;
+  DefaultNetworkManager::DefaultNetworkManager() = default;
+
+  DefaultNetworkManager::~DefaultNetworkManager() = default;
+
+} // namespace ei06125::net
