@@ -132,6 +132,7 @@ set_project_warnings(net_global_settings)
 if(OS_NAME_RESULT STREQUAL "Windows")
   target_compile_definitions(
     net_global_settings INTERFACE WIN32_LEAN_AND_MEAN NOMINMAX
+                                  _WIN32_WINNT=0x0600
   )
 endif()
 
@@ -149,13 +150,14 @@ set(cpp_standard_library_pch
 )
 set(windows_api_library_pch <Windows.h> <WinSock2.h> <Ws2tcpip.h> <iphlpapi.h>)
 set(linux_api_library_pch
-    <sys/socket.h>
-    <ifaddrs.h>
-    <netinet/in.h>
-    <sys/types.h>
-    <netdb.h>
+    <arpa/inet.h>
     <errno.h>
     <fcntl.h>
+    <ifaddrs.h>
+    <netdb.h>
+    <netinet/in.h>
+    <sys/socket.h>
+    <sys/types.h>
     <unistd.h>
 )
 
@@ -187,15 +189,20 @@ if(NET_BUILD_TESTS)
   find_package(Threads REQUIRED)
   find_package(GTest)
   if(NOT GTest_FOUND)
-    log_warn("Configuring Google Test -- NOT FOUND")
-    log_info("Downloading into ${CMAKE_BINARY_DIR}/_deps")
+    if(NOT EXISTS ${CMAKE_BINARY_DIR}/_deps/googletest-src)
+      log_warn("Configuring Google Test -- NOT FOUND")
+      log_info("Downloading into ${CMAKE_BINARY_DIR}/_deps")
+      FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG 58d77fa8070e8cec2dc1ed015d66b454c8d78850 # release-1.12.1
+      )
+      FetchContent_MakeAvailable(googletest)
+    else()
+      log_warn("Configuring Google Test -- FOUND in ${CMAKE_BINARY_DIR}/_deps")
+      add_subdirectory(${CMAKE_BINARY_DIR}/_deps/googletest-src)
+    endif()
     log_info("You might want to try installing on your system")
-    FetchContent_Declare(
-      googletest
-      GIT_REPOSITORY https://github.com/google/googletest.git
-      GIT_TAG 58d77fa8070e8cec2dc1ed015d66b454c8d78850 # release-1.12.1
-    )
-    FetchContent_MakeAvailable(googletest)
     add_library(EI06125::GTest ALIAS gtest)
     add_library(EI06125::GMock ALIAS gmock)
   else()

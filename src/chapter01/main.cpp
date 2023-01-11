@@ -1,10 +1,10 @@
-#include "NetworkingTS/NetworkManager.h"
+#include "NetworkManager.h"
 
-#include <format>
-#include <iostream>
+using namespace ei06125;
 
 int main() {
-  using namespace ei06125::net;
-  auto* network = GetNetworkInterface();
-  network->PrintAdaptersAddresses();
+  auto newNetworkManager = std::make_unique<NetworkManager>();
+  net::SetNetworkInterface(newNetworkManager.get());
+  newNetworkManager->PrintAdaptersAddresses();
+  return 0;
 }

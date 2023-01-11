@@ -1,6 +1,6 @@
 #include "networkingTS/NetworkInterface.h"
 
-#include "networkingTS/NetworkManager.h"
+#include "networkingTS/DefaultNetworkManager.h"
 
 namespace ei06125::net {
 
@@ -12,7 +12,7 @@ namespace ei06125::net {
     // (IILE)'
     static bool init = []() {
       if (!instance) {
-        static NetworkManager theNetworkManager;
+        static DefaultNetworkManager theNetworkManager;
         instance = &theNetworkManager;
       }
       return true; // or false, as the actual value does not matter.

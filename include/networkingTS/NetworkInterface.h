@@ -6,10 +6,10 @@ namespace ei06125::net {
    public:
     virtual ~NetworkInterface() noexcept = default;
 
-    void PrintAdaptersAddresses() const { PrintAdaptersAddresses_(); }
+    // void PrintAdaptersAddresses() const { PrintAdaptersAddresses_(); }
 
    private:
-    virtual void PrintAdaptersAddresses_() const = 0;
+    // virtual void PrintAdaptersAddresses_() const = 0;
   };
 
   [[nodiscard]] NetworkInterface* GetNetworkInterface();
